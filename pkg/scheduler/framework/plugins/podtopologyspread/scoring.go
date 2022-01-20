@@ -225,7 +225,7 @@ func (pl *PodTopologySpread) NormalizeScore(ctx context.Context, cycleState *fra
 		node := nodeInfo.Node()
 		// Debugging purpose: print the score for each node.
 		// Score must be a pointer here, otherwise it's always 0.
-		if klog.V(10) {
+		if klog.V(2) {
 			defer func(score *int64, nodeName string) {
 				klog.Infof("%v -> %v: PodTopologySpread NormalizeScore, Score: (%d)", pod.Name, nodeName, *score)
 			}(&scores[i].Score, node.Name)

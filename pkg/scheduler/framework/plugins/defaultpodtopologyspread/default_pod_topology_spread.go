@@ -170,7 +170,7 @@ func (pl *DefaultPodTopologySpread) NormalizeScore(ctx context.Context, state *f
 			}
 		}
 		scores[i].Score = int64(fScore)
-		if klog.V(10) {
+		if klog.V(2) {
 			klog.Infof(
 				"%v -> %v: SelectorSpreadPriority, Score: (%d)", pod.Name, scores[i].Name, int64(fScore),
 			)

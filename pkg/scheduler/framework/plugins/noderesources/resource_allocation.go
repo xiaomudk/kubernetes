@@ -67,7 +67,7 @@ func (r *resourceAllocationScorer) score(
 	} else {
 		score = r.scorer(requested, allocatable, false, 0, 0)
 	}
-	if klog.V(10) {
+	if klog.V(2) {
 		if len(pod.Spec.Volumes) >= 0 && utilfeature.DefaultFeatureGate.Enabled(features.BalanceAttachedNodeVolumes) && nodeInfo.TransientInfo != nil {
 			klog.Infof(
 				"%v -> %v: %v, map of allocatable resources %v, map of requested resources %v , allocatable volumes %d, requested volumes %d, score %d",
@@ -107,7 +107,7 @@ func calculateResourceAllocatableRequest(nodeInfo *schedulernodeinfo.NodeInfo, p
 			return allocatable.ScalarResources[resource], (requested.ScalarResources[resource] + podRequest)
 		}
 	}
-	if klog.V(10) {
+	if klog.V(2) {
 		klog.Infof("requested resource %v not considered for node score calculation",
 			resource,
 		)

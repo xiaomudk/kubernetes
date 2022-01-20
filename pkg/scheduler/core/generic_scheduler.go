@@ -682,7 +682,7 @@ func (g *genericScheduler) prioritizeNodes(
 				mu.Lock()
 				for i := range *prioritizedList {
 					host, score := (*prioritizedList)[i].Host, (*prioritizedList)[i].Score
-					if klog.V(10) {
+					if klog.V(2) {
 						klog.Infof("%v -> %v: %v, Score: (%d)", util.GetPodFullName(pod), host, g.extenders[extIndex].Name(), score)
 					}
 					combinedScores[host] += score * weight
@@ -699,7 +699,7 @@ func (g *genericScheduler) prioritizeNodes(
 		}
 	}
 
-	if klog.V(10) {
+	if klog.V(2) {
 		for i := range result {
 			klog.Infof("Host %s => Score %d", result[i].Name, result[i].Score)
 		}

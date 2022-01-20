@@ -409,7 +409,7 @@ func (pl *InterPodAffinity) satisfiesExistingPodsAntiAffinity(pod *v1.Pod, state
 	// the scheduled pod anti-affinity terms
 	for topologyKey, topologyValue := range node.Labels {
 		if topologyMap[topologyPair{key: topologyKey, value: topologyValue}] > 0 {
-			klog.V(10).Infof("Cannot schedule pod %+v onto node %v", pod.Name, node.Name)
+			klog.V(2).Infof("Cannot schedule pod %+v onto node %v", pod.Name, node.Name)
 			return false, nil
 		}
 	}
