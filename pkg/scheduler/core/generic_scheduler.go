@@ -700,10 +700,25 @@ func (g *genericScheduler) prioritizeNodes(
 	}
 
 	if klog.V(2) {
+		content := make(map[string]map[string]int64)
+		plugins := make([]string, 0)
 		for j := range scoresMap {
 			for i := range scoresMap[j] {
-				klog.Infof("Host %s, Pod %s, Plugin %s => Score %d", scoresMap[j][i].Name, pod.Name, j, scoresMap[j][i].Score)
+				if _, ok := content[scoresMap[j][i].Name];!ok{
+					content[scoresMap[j][i].Name] = make(map[string]int64)
+				}
+				content[scoresMap[j][i].Name][j] = scoresMap[j][i].Score
 			}
+			plugins = append(plugins, j)
+		}
+		var scoreOutput = strings.Builder{}
+		for i := range content{
+			fmt.Fprintf(&scoreOutput, "Host %s, Pod %s, Plugin: ", i, pod.Name)
+			for _, j := range plugins{
+				fmt.Fprintf(&scoreOutput, "%s=>%3d,", j, content[i][j])
+			}
+			klog.Infof(scoreOutput.String())
+			scoreOutput.Reset()
 		}
 		for i := range result {
 			klog.Infof("Host %s => Score %d", result[i].Name, result[i].Score)
