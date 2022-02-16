@@ -724,3 +724,197 @@ func TestPreferredAffinityWithHardPodAffinitySymmetricWeight(t *testing.T) {
 		})
 	}
 }
+func TestPreferredAffinity2(t *testing.T) {
+	hkenode167 := map[string]string{
+		"kubernetes.io/hostname": "hkenode167.test.ops.dc01",
+		"kubernetes.io/os": "linux",
+	}
+	hkenode168 := map[string]string{
+		"kubernetes.io/hostname": "hkenode168.test.ops.dc01",
+		"kubernetes.io/os": "linux",
+	}
+	hkenode169 := map[string]string{
+		"kubernetes.io/hostname": "hkenode169.test.ops.dc01",
+		"kubernetes.io/os": "linux",
+	}
+	hkenode170 := map[string]string{
+		"kubernetes.io/hostname": "hkenode169.test.ops.dc01",
+		"kubernetes.io/os": "linux",
+	}
+	pod1 := map[string]string{
+		"hellobike.com/app": "App",
+		"hellobike.com/configGroup": "group1",
+		"hellobike.com/env": "FAT",
+		"hellobike.com/language": "java",
+		"hellobike.com/team": "Avenger",
+	}
+	pod2 := map[string]string{
+		"hellobike.com/app": "AppHitchJudgeService",
+		"hellobike.com/configGroup": "group1",
+		"hellobike.com/env": "FAT",
+		"hellobike.com/language": "java",
+		"hellobike.com/team": "Avenger",
+	}
+	pod3 := map[string]string{
+		"hellobike.com/app": "App",
+		"hellobike.com/configGroup": "group1",
+		"hellobike.com/env": "FAT",
+		"hellobike.com/language": "java",
+		"hellobike.com/team": "Avenger",
+	}
+
+	affinity := &v1.Affinity{
+		PodAntiAffinity: &v1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []v1.WeightedPodAffinityTerm{
+				{
+					Weight: 30,
+					PodAffinityTerm: v1.PodAffinityTerm{
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"hellobike.com/app": "AppEasybikeShortUrlService",
+								"hellobike.com/configGroup": "group1",
+								"hellobike.com/env": "FAT",
+							},
+						},
+						TopologyKey: "topology.diskplugin.csi.alibabacloud.com/zone",
+					},
+				},
+				{
+					Weight: 50,
+					PodAffinityTerm: v1.PodAffinityTerm{
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"hellobike.com/app": "App",
+								"hellobike.com/configGroup": "group1",
+								"hellobike.com/env": "FAT",
+							},
+						},
+						TopologyKey: "kubernetes.io/hostname",
+					},
+				},
+				//{
+				//	Weight: 20,
+				//	PodAffinityTerm: v1.PodAffinityTerm{
+				//		LabelSelector: &metav1.LabelSelector{
+				//			MatchLabels: map[string]string{
+				//				"hellobike.com/env": "FAT",
+				//			},
+				//		},
+				//		TopologyKey: "kubernetes.io/hostname",
+				//	},
+				//},
+			},
+		},
+	}
+
+	affinity2 := &v1.Affinity{
+		PodAntiAffinity: &v1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []v1.WeightedPodAffinityTerm{
+				{
+					Weight: 130,
+					PodAffinityTerm: v1.PodAffinityTerm{
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"hellobike.com/app": "AppEasybikeShortUrlService",
+								"hellobike.com/configGroup": "group1",
+								"hellobike.com/env": "FAT",
+							},
+						},
+						TopologyKey: "topology.diskplugin.csi.alibabacloud.com/zone",
+					},
+				},
+				{
+					Weight: 150,
+					PodAffinityTerm: v1.PodAffinityTerm{
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"hellobike.com/app": "App",
+								"hellobike.com/configGroup": "group1",
+								"hellobike.com/env": "FAT",
+							},
+						},
+						TopologyKey: "kubernetes.io/hostname",
+					},
+				},
+				{
+					Weight: 200,
+					PodAffinityTerm: v1.PodAffinityTerm{
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"hellobike.com/env": "FAT",
+							},
+						},
+						TopologyKey: "kubernetes.io/hostname",
+					},
+				},
+			},
+		},
+	}
+	_ = affinity
+	tests := []struct {
+		pod          *v1.Pod
+		pods         []*v1.Pod
+		nodes        []*v1.Node
+		expectedList framework.NodeScoreList
+		name         string
+	}{
+		// there are 2 regions, say regionChina(machine1,machine3,machine4) and regionIndia(machine2,machine5), both regions have nodes that match the preference.
+		// But there are more nodes(actually more existing pods) in regionChina that match the preference than regionIndia.
+		// Then, nodes in regionChina get higher score than nodes in regionIndia, and all the nodes in regionChina should get a same score(high score),
+		// while all the nodes in regionIndia should get another same score(low score).
+		{
+			pod: &v1.Pod{Spec: v1.PodSpec{NodeName: ""}, ObjectMeta: metav1.ObjectMeta{Labels: pod1}},
+			pods: []*v1.Pod{
+				{Spec: v1.PodSpec{NodeName: "hkenode167"}, ObjectMeta: metav1.ObjectMeta{Labels: pod3}},
+				{Spec: v1.PodSpec{NodeName: "hkenode167", Affinity: affinity2}, ObjectMeta: metav1.ObjectMeta{Labels: pod2}},
+				{Spec: v1.PodSpec{NodeName: "hkenode167", Affinity: affinity2}, ObjectMeta: metav1.ObjectMeta{Labels: pod3}},
+				{Spec: v1.PodSpec{NodeName: "hkenode168"}, ObjectMeta: metav1.ObjectMeta{Labels: pod3}},
+				{Spec: v1.PodSpec{NodeName: "hkenode168", Affinity: affinity2}, ObjectMeta: metav1.ObjectMeta{Labels: pod2}},
+				{Spec: v1.PodSpec{NodeName: "hkenode169"}, ObjectMeta: metav1.ObjectMeta{Labels: pod3}},
+			},
+			nodes: []*v1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "hkenode167", Labels: hkenode167}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "hkenode168", Labels: hkenode168}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "hkenode169", Labels: hkenode169}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "hkenode170", Labels: hkenode170}},
+			},
+			expectedList: []framework.NodeScore{{Name: "machine1", Score: framework.MaxNodeScore}, {Name: "machine2", Score: 50}, {Name: "machine3", Score: framework.MaxNodeScore}, {Name: "machine4", Score: framework.MaxNodeScore}, {Name: "machine5", Score: 50}},
+			name:         "Affinity: nodes in one region has more matching pods comparing to other reqion, so the region which has more macthes will get high score",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			state := framework.NewCycleState()
+			snapshot := cache.NewSnapshot(test.pods, test.nodes)
+			p := &InterPodAffinity{
+				Args: Args{
+					HardPodAffinityWeight: pointer.Int32Ptr(DefaultHardPodAffinityWeight),
+				},
+				sharedLister: snapshot,
+			}
+			status := p.PreScore(context.Background(), state, test.pod, test.nodes)
+			if !status.IsSuccess() {
+				t.Errorf("unexpected error: %v", status)
+			}
+			var gotList framework.NodeScoreList
+			for _, n := range test.nodes {
+				nodeName := n.ObjectMeta.Name
+				score, status := p.Score(context.Background(), state, test.pod, nodeName)
+				if !status.IsSuccess() {
+					t.Errorf("unexpected error: %v", status)
+				}
+				gotList = append(gotList, framework.NodeScore{Name: nodeName, Score: score})
+			}
+
+			status = p.ScoreExtensions().NormalizeScore(context.Background(), state, test.pod, gotList)
+			if !status.IsSuccess() {
+				t.Errorf("unexpected error: %v", status)
+			}
+
+			if !reflect.DeepEqual(test.expectedList, gotList) {
+				t.Errorf("expected:\n\t%+v,\ngot:\n\t%+v", test.expectedList, gotList)
+			}
+
+		})
+	}
+}
