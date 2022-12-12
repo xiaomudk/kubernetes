@@ -179,6 +179,10 @@ func (g *genericScheduler) Schedule(ctx context.Context, prof *profile.Profile, 
 	}
 	trace.Step("Computing predicates done")
 
+	for node, status := range filteredNodesStatuses {
+		klog.V(2).Infof("filter Fail nodes: %s, reasons: %v", node, status.Reasons())
+	}
+
 	if len(filteredNodes) == 0 {
 		return result, &FitError{
 			Pod:                   pod,
@@ -704,7 +708,7 @@ func (g *genericScheduler) prioritizeNodes(
 		plugins := make([]string, 0)
 		for j := range scoresMap {
 			for i := range scoresMap[j] {
-				if _, ok := content[scoresMap[j][i].Name];!ok{
+				if _, ok := content[scoresMap[j][i].Name]; !ok {
 					content[scoresMap[j][i].Name] = make(map[string]int64)
 				}
 				content[scoresMap[j][i].Name][j] = scoresMap[j][i].Score
@@ -713,9 +717,9 @@ func (g *genericScheduler) prioritizeNodes(
 		}
 		sort.Strings(plugins)
 		var scoreOutput = strings.Builder{}
-		for i := range content{
+		for i := range content {
 			fmt.Fprintf(&scoreOutput, "Host %s, Pod %s, Plugin: ", i, pod.Name)
-			for _, j := range plugins{
+			for _, j := range plugins {
 				fmt.Fprintf(&scoreOutput, "%s=>%3d,", j, content[i][j])
 			}
 			klog.Infof(scoreOutput.String())
