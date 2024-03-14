@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -385,6 +386,10 @@ func (sched *Scheduler) schedulePod(ctx context.Context, fwk framework.Framework
 		return result, err
 	}
 	trace.Step("Computing predicates done")
+
+	for node, status := range diagnosis.NodeToStatusMap {
+		klog.V(2).Infof("filter Fail nodes: %s, reasons: %v", node, status.Reasons())
+	}
 
 	if len(feasibleNodes) == 0 {
 		return result, &framework.FitError{
@@ -778,10 +783,18 @@ func prioritizeNodes(
 			}
 		}
 	}
-
-	if loggerVTen.Enabled() {
+	if klog.V(2).Enabled() {
+		var scoreOutput = strings.Builder{}
+		for _, nodeScore := range nodesScores {
+			fmt.Fprintf(&scoreOutput, "Host %s, Pod %s, Plugin: ", nodeScore.Name, pod.Name)
+			for _, pluginScore := range nodeScore.Scores {
+				fmt.Fprintf(&scoreOutput, "%s=>%3d,", pluginScore.Name, pluginScore.Score)
+			}
+			klog.Infof(scoreOutput.String())
+			scoreOutput.Reset()
+		}
 		for i := range nodesScores {
-			loggerVTen.Info("Calculated node's final score for pod", "pod", klog.KObj(pod), "node", nodesScores[i].Name, "score", nodesScores[i].TotalScore)
+			klog.Infof("Host %s => Score %d", nodesScores[i].Name, nodesScores[i].TotalScore)
 		}
 	}
 	return nodesScores, nil
